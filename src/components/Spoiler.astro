@@ -1,0 +1,29 @@
+---
+// Usage in .mdx:  <Spoiler summary="Reveal root flag">`HTB{...}`</Spoiler>
+// Uses native <details> - works with zero JavaScript.
+const { summary = 'Reveal' } = Astro.props;
+---
+<details class="spoiler">
+  <summary class="mono">{summary}</summary>
+  <div class="spoiler__body"><slot /></div>
+</details>
+
+<style>
+  .spoiler {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 1.4em 0;
+    background: var(--bg-alt);
+  }
+  .spoiler summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    color: var(--accent-text);
+    user-select: none;
+  }
+  .spoiler summary:hover { color: var(--accent-bright); }
+  .spoiler[open] summary { border-bottom: 1px solid var(--border); }
+  .spoiler__body { padding: 12px 14px; }
+  .spoiler__body :global(p:last-child) { margin-bottom: 0; }
+</style>

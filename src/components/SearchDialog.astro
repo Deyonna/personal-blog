@@ -1,0 +1,220 @@
+---
+// Site-wide search in a modal dialog, backed by the Pagefind index that
+// `npm run build` generates. Opened by any element with `data-search-open`,
+// by Ctrl/⌘+K or "/", or by a `data-search-tag="…"` element (which opens it
+// pre-filtered to that tag). The index only exists on the built site, so in
+// `npm run dev` the dialog explains that instead of showing results.
+import SearchIcon from './SearchIcon.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<dialog id="search-dialog" class="sd" aria-label="Search">
+  <div class="sd__bar">
+    <SearchIcon />
+    <input
+      type="search"
+      class="sd__input mono"
+      placeholder="Search writeups, knowledge, tools…"
+      aria-label="Search the site"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button type="button" class="sd__close mono" aria-label="Close search">esc</button>
+  </div>
+  <div class="sd__filter" hidden>
+    <button type="button" class="tag tag--accent sd__chip" aria-label="Remove tag filter"></button>
+  </div>
+  <p class="sd__status mono" aria-live="polite"></p>
+  <ol class="sd__results"></ol>
+</dialog>
+
+<!-- The Pagefind bundle is loaded from an unbundled inline script: a dynamic
+     import() inside the bundled script below gets wrapped in Vite's preload
+     helper, which is undefined on the page and throws. -->
+<script is:inline define:vars={{ base }}>
+  window.__loadPagefind = () => import(`${base}/pagefind/pagefind.js`);
+</script>
+
+<script>
+  type Pagefind = {
+    options: (o: { baseUrl: string }) => Promise<void>;
+    debouncedSearch: (
+      q: string | null,
+      o?: { filters?: Record<string, string> },
+    ) => Promise<null | { results: { data: () => Promise<any> }[] }>;
+  };
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const importPagefind =(window as any).__loadPagefind as () => Promise<Pagefind>;
+  const dialog = document.getElementById('search-dialog') as HTMLDialogElement;
+  const input = dialog.querySelector<HTMLInputElement>('.sd__input')!;
+  const filterRow = dialog.querySelector<HTMLElement>('.sd__filter')!;
+  const chip = dialog.querySelector<HTMLButtonElement>('.sd__chip')!;
+  const status = dialog.querySelector<HTMLElement>('.sd__status')!;
+  const list = dialog.querySelector<HTMLOListElement>('.sd__results')!;
+
+  let tag: string | null = null;
+  let pagefind: Promise<Pagefind | null> | null = null;
+
+  const load = () =>
+    (pagefind ??= importPagefind()
+      .then(async (pf: Pagefind) => {
+        await pf.options({ baseUrl: `${base}/` });
+        return pf;
+      })
+      .catch(() => null));
+
+  const run = async () => {
+    const q = input.value.trim();
+    filterRow.hidden = !tag;
+    chip.textContent = tag ? `#${tag}  ×` : '';
+
+    if (!q && !tag) {
+      list.replaceChildren();
+      status.textContent = '';
+      return;
+    }
+    const pf = await load();
+    if (!pf) {
+      status.textContent = 'Search is available on the built site (npm run build && npm run preview).';
+      return;
+    }
+    const search = await pf.debouncedSearch(q || null, tag ? { filters: { tag } } : {});
+    if (!search) return; // superseded by a newer keystroke
+
+    const data = await Promise.all(search.results.slice(0, 12).map((r) => r.data()));
+    status.textContent = data.length ? '' : 'No matches.';
+    list.replaceChildren(
+      ...data.map((d) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = d.url;
+        a.className = 'sd__hit';
+        const section = document.createElement('span');
+        section.className = 'sd__section mono';
+        section.textContent = d.filters?.section?.[0] ?? '';
+        const title = document.createElement('span');
+        title.className = 'sd__title';
+        title.textContent = d.meta?.title ?? d.url;
+        const excerpt = document.createElement('span');
+        excerpt.className = 'sd__excerpt';
+        // Pagefind escapes page text and only adds <mark> highlights.
+        excerpt.innerHTML = d.excerpt;
+        a.append(section, title, excerpt);
+        li.append(a);
+        return li;
+      }),
+    );
+  };
+
+  const open = (withTag: string | null = null) => {
+    tag = withTag;
+    if (!dialog.open) dialog.showModal();
+    input.focus();
+    input.select();
+    load();
+    run();
+  };
+
+  input.addEventListener('input', run);
+  chip.addEventListener('click', () => {
+    tag = null;
+    run();
+    input.focus();
+  });
+  dialog.querySelector('.sd__close')!.addEventListener('click', () => dialog.close());
+  // A search input swallows the first Esc to clear its text; close on the
+  // first press instead so Esc behaves the same whether or not you've typed.
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      dialog.close();
+    }
+  });
+  // Click on the backdrop (outside the dialog box) closes it.
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  document.addEventListener('click', (e) => {
+    const el = (e.target as Element).closest<HTMLElement>('[data-search-open], [data-search-tag]');
+    if (!el) return;
+    e.preventDefault();
+    open(el.dataset.searchTag ?? null);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const typing = (e.target as Element).closest('input, textarea, [contenteditable]');
+    if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) {
+      e.preventDefault();
+      open();
+    }
+  });
+</script>
+
+<style>
+  .sd {
+    width: min(620px, calc(100vw - 32px));
+    max-height: min(70vh, 640px);
+    margin: 12vh auto auto;
+    padding: 0;
+    background: var(--bg-alt);
+    color: var(--text-body);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow-y: auto;
+  }
+  .sd::backdrop { background: rgb(0 0 0 / 0.6); }
+  .sd__bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg-alt);
+  }
+  .sd__bar :global(svg) { flex: none; font-size: 1rem; color: var(--text-faint); }
+  .sd__input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .sd__input::-webkit-search-cancel-button { display: none; }
+  .sd__input::placeholder { color: var(--text-faint); }
+  .sd__close {
+    background: var(--border-soft);
+    border: none;
+    border-radius: 3px;
+    color: var(--text-faint);
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    cursor: pointer;
+  }
+  .sd__filter { padding: 10px 14px 0; }
+  .sd__chip { border: none; cursor: pointer; white-space: pre; }
+  .sd__status { margin: 0; padding: 14px; font-size: 0.75rem; color: var(--text-faint); }
+  .sd__status:empty { display: none; }
+  .sd__results { list-style: none; margin: 0; padding: 4px 0 8px; }
+  .sd__results:empty { display: none; }
+  /* Result rows are created by script, so they don't carry Astro's scope
+     attribute; target them globally from the scoped list. */
+  .sd__results :global(.sd__hit) {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 14px;
+    border-bottom: none;
+    color: inherit;
+  }
+  .sd__results :global(.sd__hit:hover), .sd__results :global(.sd__hit:focus-visible) { background: var(--surface); outline: none; }
+  .sd__results :global(.sd__section) { font-size: 0.65rem; color: var(--accent-text); text-transform: uppercase; letter-spacing: 0.08em; }
+  .sd__results :global(.sd__title) { font-family: var(--font-serif); font-weight: 600; color: var(--text); }
+  .sd__results :global(.sd__excerpt) { font-size: 0.85rem; color: var(--text-muted); }
+  .sd__results :global(.sd__excerpt mark) { background: var(--accent-wash); color: var(--accent-text); }
+</style>

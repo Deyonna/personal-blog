@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { Image } from 'astro:assets';
+import avatar from '../assets/avatar.png';
+import { timeline } from '../data/timeline';
+
+const skills = [
+  'Log Analysis',
+  'Malware Analysis',
+  'Forensics',
+  'Cryptography',
+  'Burp Suite',
+  'Wireshark',
+  'Volatility',
+];
+---
+<BaseLayout title="About" description="About 0xdeyonna: SOC analyst, CTF player and security researcher.">
+  <article class="prose about">
+    <header class="bio">
+      <Image src={avatar} alt="Deyonna's avatar" width={192} class="bio__avatar" />
+      <div class="bio__text">
+        <div class="eyebrow">About</div>
+        <h1>0x<span class="accent">deyonna</span></h1>
+        <p class="bio__tagline mono">SOC Analyst · CTF Player · Security Researcher</p>
+      </div>
+    </header>
+
+    <p>
+      Hello everyone! I'm Pinelopi Gkinala, aka Deyonna, and this is my personal
+      blog. I'm interested in all things cybersecurity, from both red and blue
+      team perspectives. I enjoy solving challenges on HackTheBox and take part
+      in CTF competitions with friends and colleagues when I have the time. I
+      also like writing about my experiences and sharing what I learn with the
+      community. I am a strong advocate of women in cybersecurity and I  hope to inspire more
+      women to pursue a career in this field. I am currently working as a tier 2 SOC analyst at an MSP.
+    </p>
+    <p>
+      When I'm not working or studying, I enjoy painting, reading, playing video
+      games and watching shows. I wish the day had more than 24 hours so I could
+      do everything I want to do!
+    </p>
+
+    <ul class="skills" aria-label="Skills and tools">
+      {skills.map((s) => <li class="tag">{s}</li>)}
+    </ul>
+
+    <h2>Journey</h2>
+    <ol class="timeline">
+      {timeline.map((item) => (
+        <li class="timeline__item">
+          <span class="timeline__year mono">{item.year}</span>
+          <h3 class="timeline__title">{item.title}</h3>
+          <p class="timeline__text">{item.text}</p>
+        </li>
+      ))}
+    </ol>
+
+    <h2>Certifications &amp; profiles</h2>
+    <ul>
+      <li>SC-200: Microsoft Security Operations Analyst</li>
+      <li>AZ-900: Microsoft Azure Fundamentals</li>
+      <li>MS-900: Microsoft 365 Fundamentals</li>
+      <li>GitHub: <a href="https://github.com/Deyonna">github.com/Deyonna</a></li>
+      <li>LinkedIn: <a href="https://www.linkedin.com/in/pgkinala">linkedin.com/in/pgkinala</a></li>
+      <li>HackTheBox: <a href="https://app.hackthebox.com/users/103145">app.hackthebox.com/users/103145</a></li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p>Reach me at <a href="mailto:deyonna@proton.me">deyonna@proton.me</a>.</p>
+  </article>
+</BaseLayout>
+
+<style>
+  .about { max-width: 680px; }
+
+  /* ---------- bio header ---------- */
+  .bio {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 1.6em;
+  }
+  .bio__avatar {
+    flex: none;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    object-fit: cover;
+  }
+  .bio__text { min-width: 0; }
+  .bio h1 {
+    margin: 4px 0 6px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .accent { color: var(--accent-bright); }
+  .bio__tagline { margin: 0; font-size: 0.78rem; color: var(--text-muted); }
+
+  .skills {
+    list-style: none;
+    padding: 0;
+    margin: 1.4em 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .skills .tag { font-size: 0.72rem; }
+
+  /* ---------- timeline ---------- */
+  .timeline {
+    list-style: none;
+    margin: 1.2em 0 0;
+    padding: 0 0 0 26px;
+    position: relative;
+  }
+  /* The rail: a thin line through every dot. */
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+  .timeline__item { position: relative; padding-bottom: 1.6em; }
+  .timeline__item:last-child { padding-bottom: 0; }
+  .timeline__item::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--accent-dim);
+  }
+  /* Newest entry gets the filled accent dot. */
+  .timeline__item:first-child::before {
+    background: var(--accent);
+    border-color: var(--accent-bright);
+  }
+  .timeline__year { font-size: 0.72rem; letter-spacing: 0.08em; color: var(--accent-text); }
+  .timeline__title { margin: 2px 0 4px; font-size: 1.05rem; padding: 0; }
+  .timeline__text { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
+
+  @media (max-width: 520px) {
+    .bio { gap: 16px; }
+    .bio__avatar { width: 72px; height: 72px; }
+  }
+</style>

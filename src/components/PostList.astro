@@ -1,0 +1,78 @@
+---
+// Reusable list of entries. `basePath` is the collection route segment,
+// e.g. "writeups". Works for any collection with title/description/tags.
+import WriteupIcon from './WriteupIcon.astro';
+
+const base = import.meta.env.BASE_URL;
+// `showCover` adds the writeup's circular icon (or monogram) to each row.
+const { entries, basePath, showDate = true, showCover = false } = Astro.props;
+
+const fmt = (d) =>
+  d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : '';
+---
+<div class="list">
+  {entries.map((entry) => (
+    <article
+      class="row"
+      data-filter-item
+      data-tags={(entry.data.tags ?? []).join('|')}
+      data-text={[
+        entry.data.title,
+        entry.data.description,
+        entry.data.platform,
+        entry.data.type,
+        entry.data.difficulty,
+        entry.data.language,
+        ...(entry.data.tags ?? []),
+      ].filter(Boolean).join(' ').toLowerCase()}
+    >
+      {showCover && (
+        <a href={`${base}/${basePath}/${entry.slug}`} class="row__cover" tabindex="-1" aria-hidden="true">
+          <WriteupIcon data={entry.data} size={56} />
+        </a>
+      )}
+      <div class="row__body">
+      <div class="row__head">
+        <a href={`${base}/${basePath}/${entry.slug}`} class="row__title">{entry.data.title}</a>
+        {showDate && entry.data.date && (
+          <span class="row__date mono">{fmt(entry.data.date)}</span>
+        )}
+      </div>
+      <p class="row__desc">{entry.data.description}</p>
+      <div class="row__tags">
+        {(entry.data.tags ?? []).slice(0, 4).map((t, i) => (
+          <a href={`${base}/${basePath}?tag=${encodeURIComponent(t)}`} data-filter-tag={t} class={i === 0 ? 'tag tag--accent' : 'tag'}>{t}</a>
+        ))}
+      </div>
+      </div>
+    </article>
+  ))}
+  {entries.length === 0 && <p class="muted">Nothing here yet.</p>}
+</div>
+
+<style>
+  .list { display: flex; flex-direction: column; }
+  .row { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid var(--border); }
+  .row__cover { flex: none; border-bottom: none; }
+  .row__body { flex: 1; min-width: 0; }
+  .row:first-child { border-top: none; }
+  .row__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 5px;
+  }
+  .row__title {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    border-bottom: none;
+  }
+  .row__title:hover { color: var(--accent-bright); }
+  .row__date { font-size: 0.72rem; color: var(--text-faint); white-space: nowrap; }
+  .row__desc { color: var(--text-muted); font-size: 0.95rem; margin: 0 0 9px; }
+  .row__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+</style>

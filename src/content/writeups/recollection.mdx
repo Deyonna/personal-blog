@@ -1,0 +1,79 @@
+---
+title: "Recollection - Windows Memory Forensics"
+description: "Volatility analysis of a compromised Windows 7 memory dump: from a clipboard-staged PowerShell alias to the attacker's dropped malware."
+date: 2026-01-14
+tags: ["dfir", "volatility", "windows", "memory-forensics"]
+platform: "HackTheBox"
+type: "Sherlock"
+difficulty: "Easy"
+os: "Windows 7 x64"
+url: "https://app.hackthebox.com/sherlocks/Recollection"
+knowledge: ["evidence-of-execution"]
+icon: ./images/recollection.png
+draft: false
+---
+
+import Callout from '../../components/Callout.astro';
+import Spoiler from '../../components/Spoiler.astro';
+
+
+## Overview
+
+We're handed a memory image from a suspected-compromised host and asked to reconstruct the attacker's actions. Working through Volatility, we identify the OS profile, recover a clipboard-staged obfuscated PowerShell command, read the attacker's console history, and pull the dropped malware.
+
+<Callout type="note">
+Both Volatility 2 and Volatility 3 are used below depending on which has the more convenient plugin for a given step.
+</Callout>
+
+## Profiling the image
+
+```bash
+vol.py -f recollection.bin imageinfo
+```
+
+The suggested profile is `Win7SP1x64`, and the header reports the capture time - the answer to "when was the dump taken."
+
+## Clipboard staging
+
+```bash
+vol.py -f recollection.bin --profile=Win7SP1x64 clipboard
+```
+
+The clipboard holds an obfuscated PowerShell string:
+
+```powershell
+(gv '*MDR*').naMe[3,11,2]-joIN''
+```
+
+Evaluated, this resolves to `iex` - the alias for `Invoke-Expression`, a common way to obfuscate the intent to run a downloaded payload in memory.
+
+## Console history
+
+The `consoles` plugin recovers what was actually typed and its on-screen output:
+
+```bash
+vol.py -f recollection.bin --profile=Win7SP1x64 consoles
+```
+
+This surfaces an attempted exfiltration over SMB, a base64-encoded `powershell -e` command that writes a "readme," and - importantly for later - a directory listing of the attacker's Downloads folder showing a dropped executable whose filename is its own hash, plus a typosquatted `csrsss.exe`.
+
+<Callout type="tip">
+`consoles` is one of the highest-value Windows memory plugins: it reconstructs the attacker's terminal session, commands and output together, which often answers several investigation questions at once.
+</Callout>
+
+## Recovering the dropped malware
+
+Locate the executable's offset, then carve it out of memory:
+
+```bash
+vol.py -f recollection.bin --profile=Win7SP1x64 filescan | grep -i .exe
+vol.py -f recollection.bin --profile=Win7SP1x64 dumpfiles -n --dump-dir=./ -Q <offset>
+```
+
+From here the file's hash and Imphash can be checked against threat intel to identify the family.
+
+## Key Takeaways
+
+- Memory captures preserve volatile evidence that never touches disk - clipboard contents, console history, injected code. Acquisition order matters: capture RAM before pulling the plug.
+- Filename-as-hash and typosquatting (`csrsss.exe` vs the legitimate `csrss.exe`) are simple but effective evasion; knowing the legitimate Windows process names is what makes the anomaly obvious.
+- For evidence that a program actually ran (versus was merely present), see the knowledge page below.

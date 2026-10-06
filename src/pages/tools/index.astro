@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import SectionFilter from '../../components/SectionFilter.astro';
+import { getCollection } from 'astro:content';
+const entries = (await getCollection('tools', ({ data }) => !data.draft))
+  .sort((a, b) => (b.data.date?.valueOf() ?? 0) - (a.data.date?.valueOf() ?? 0));
+---
+<BaseLayout title="Tools" description="Scripts, parsers, and utilities.">
+  <div class="eyebrow">Tooling</div>
+  <h1>Tools</h1>
+  <p class="muted">Scripts and parsers I've written - often automating something from a writeup or knowledge page.</p>
+  <SectionFilter entries={entries} placeholder="Search tools…">
+    <PostList entries={entries} basePath="tools" />
+  </SectionFilter>
+</BaseLayout>

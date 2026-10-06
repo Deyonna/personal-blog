@@ -1,0 +1,33 @@
+---
+// Renders the most-used tags as a uniform cloud. Clicking a tag opens the
+// search dialog filtered to it (see SearchDialog).
+const { writeups = [], knowledge = [], limit = null } = Astro.props;
+
+const counts = new Map();
+for (const entry of [...writeups, ...knowledge]) {
+  for (const tag of entry.data.tags ?? []) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+
+let tags = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+if (limit) tags = tags.slice(0, limit);
+---
+
+<div class="cloud">
+  {tags.map(([tag, count]) => (
+    <button
+      type="button"
+      data-search-tag={tag}
+      class="tag"
+      title={`${count} post${count === 1 ? '' : 's'}`}
+    >
+      {tag}
+    </button>
+  ))}
+</div>
+
+<style>
+  .cloud { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .tag { border: none; cursor: pointer; font-size: 0.72rem; }
+</style>

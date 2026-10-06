@@ -1,0 +1,14 @@
+---
+import { getCollection } from 'astro:content';
+import KnowledgeLayout from '../../layouts/KnowledgeLayout.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('knowledge', ({ data }) => !data.draft);
+  return entries.map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content, headings } = await entry.render();
+---
+<KnowledgeLayout entry={entry} headings={headings}>
+  <Content />
+</KnowledgeLayout>

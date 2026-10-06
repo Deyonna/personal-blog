@@ -1,0 +1,203 @@
+/* ============================================================
+   0xdeyonna - global styles
+   Palette: muted monochrome + purple accent (#9a11bf family)
+   Type: Geist body/UI + Lora titles + JetBrains Mono chrome/code
+   ============================================================ */
+
+:root {
+  /* surfaces */
+  --bg: #0d0d0f;
+  --bg-alt: #0f0f11;
+  --surface: #151517;
+  --border: #26262a;
+  --border-soft: #1c1c20;
+
+  /* text */
+  --text: #e8e6e1;
+  --text-body: #c9c7c2;
+  --text-muted: #96948d;
+  --text-faint: #66645e;
+
+  /* accent (from #9a11bf) */
+  --accent: #9a11bf;
+  --accent-bright: #c430ed;
+  --accent-dim: #6d0c87;
+  --accent-wash: #2a1533;
+  --accent-text: #d98cf0;
+
+  /* type */
+  --font-serif: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --maxw: 1080px;
+  --sidebar-w: 240px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- headings: serif ---------- */
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 2em 0 0.6em;
+}
+h1 { font-size: 2rem; margin-top: 0; }
+h2 { font-size: 1.4rem; padding-top: 0.4em; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; }
+
+p { margin: 0 0 1.1em; }
+
+/* Leave room above headings when jumped to from the contents panel. */
+h2[id], h3[id] { scroll-margin-top: 64px; }
+
+/* ---------- article + contents panel ---------- */
+.doc {
+  display: grid;
+  grid-template-columns: minmax(0, 720px) 200px;
+  gap: 56px;
+}
+@media (max-width: 1199px) {
+  .doc { grid-template-columns: minmax(0, 1fr); }
+  .doc > .toc { display: none; }
+}
+
+a {
+  color: var(--accent-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+a:hover { border-bottom-color: var(--accent-bright); }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5em 0;
+}
+
+/* ---------- code ---------- */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 0.12em 0.4em;
+  color: var(--accent-text);
+}
+pre {
+  font-family: var(--font-mono);
+  background: var(--bg-alt) !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 1.4em 0;
+}
+/* Long inline tokens (paths, hashes) wrap instead of widening the page. */
+:not(pre) > code { overflow-wrap: anywhere; }
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* ---------- blockquotes ---------- */
+blockquote {
+  border-left: 3px solid var(--accent-dim);
+  margin: 1.4em 0;
+  padding: 0.2em 0 0.2em 1.1em;
+  color: var(--text-muted);
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+/* ---------- tables ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4em 0;
+  font-size: 0.9rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  text-align: left;
+}
+th {
+  font-family: var(--font-sans);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ---------- images ---------- */
+img { max-width: 100%; height: auto; border-radius: 6px; }
+
+/* ---------- shared bits ---------- */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+}
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--text-muted); }
+.faint { color: var(--text-faint); }
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  background: var(--border-soft);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 3px;
+  border-bottom: none;
+  white-space: nowrap;
+}
+.tag:hover { color: var(--text); border-bottom: none; }
+.tag--accent { background: var(--accent-wash); color: var(--accent-text); }
+/* Tags inside an article's header link out, so they pick up the accent. */
+.prose a.tag:hover { background: var(--accent-wash); color: var(--accent-text); }
+
+/* accessibility: visible focus ring */
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 14px;
+  z-index: 100;
+}
+.skip-link:focus { left: 8px; top: 8px; }

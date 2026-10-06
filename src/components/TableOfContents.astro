@@ -1,0 +1,126 @@
+---
+// Sticky "On this page" map for article pages. Lists the h2/h3 headings from
+// `entry.render()`, highlights the section currently being read, and shows
+// reading progress. Hidden on narrower screens (see `.doc` in global.css).
+const { headings = [] } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{items.length > 1 && (
+  <aside class="toc" aria-label="On this page">
+    <div class="toc__head">
+      <span class="eyebrow">On this page</span>
+      <span class="toc__pct mono" aria-hidden="true">0%</span>
+    </div>
+    <div class="toc__rail"><div class="toc__fill"></div></div>
+    <ol class="toc__list mono">
+      {items.map((h) => (
+        <li class={`toc__item toc__item--d${h.depth}`}>
+          <a href={`#${h.slug}`} data-toc-link={h.slug}>{h.text}</a>
+        </li>
+      ))}
+    </ol>
+  </aside>
+)}
+
+<script>
+  const toc = document.querySelector<HTMLElement>('.toc');
+  if (toc) {
+    const links = [...toc.querySelectorAll<HTMLAnchorElement>('[data-toc-link]')];
+    const targets = links
+      .map((a) => document.getElementById(a.dataset.tocLink!))
+      .filter((el): el is HTMLElement => !!el);
+    const pct = toc.querySelector<HTMLElement>('.toc__pct')!;
+    const fill = toc.querySelector<HTMLElement>('.toc__fill')!;
+    const article = document.querySelector<HTMLElement>('.doc > article')!;
+
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+
+      // Progress through the article body, 0–100.
+      const rect = article.getBoundingClientRect();
+      const total = rect.height - innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 1;
+      pct.textContent = `${Math.round(p * 100)}%`;
+      fill.style.transform = `scaleY(${p})`;
+
+      // Active section = last heading scrolled past a line near the top.
+      // At the very bottom, force the last one so short final sections light up.
+      const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+      let active = atBottom ? targets.length - 1 : -1;
+      if (!atBottom) {
+        for (let i = 0; i < targets.length; i++) {
+          if (targets[i].getBoundingClientRect().top <= 120) active = i;
+          else break;
+        }
+      }
+      links.forEach((a, i) => {
+        const on = i === active;
+        a.classList.toggle('is-active', on);
+        if (on) a.setAttribute('aria-current', 'location');
+        else a.removeAttribute('aria-current');
+      });
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  }
+</script>
+
+<style>
+  .toc {
+    position: sticky;
+    top: 40px;
+    align-self: start;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 2px 1fr;
+    column-gap: 14px;
+    row-gap: 12px;
+  }
+  .toc__head {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .toc__pct { font-size: 0.65rem; color: var(--text-faint); }
+  .toc__rail {
+    grid-row: 2;
+    grid-column: 1;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .toc__fill {
+    height: 100%;
+    background: var(--accent);
+    transform-origin: top;
+    transform: scaleY(0);
+  }
+  .toc__list {
+    grid-row: 2;
+    grid-column: 2;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+  .toc__item--d3 { padding-left: 12px; }
+  .toc__item a { color: var(--text-faint); border-bottom: none; }
+  .toc__item a:hover { color: var(--text-muted); }
+  .toc__item a.is-active { color: var(--accent-text); }
+</style>

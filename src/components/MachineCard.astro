@@ -1,0 +1,152 @@
+---
+// Challenge summary card shown at the top of every writeup. Rendered by
+// WriteupLayout from frontmatter (platform, type, difficulty, os, ip, url,
+// icon), so posts don't need to include it themselves. The platform icon
+// sits in its own section on the left, detail rows on the right. Works for any platform: the link
+// row shows the URL itself rather than assuming HackTheBox.
+import WriteupIcon from './WriteupIcon.astro';
+
+const { data } = Astro.props;
+const rows = [
+  ['Platform', data.platform],
+  ['Type', data.type],
+  ['Difficulty', data.difficulty],
+  ['OS', data.os],
+  ['IP', data.ip],
+].filter(([, v]) => v);
+
+// "https://app.hackthebox.com/challenges/Suspicious%2520Threat"
+//   -> "app.hackthebox.com/challenges/Suspicious Threat"
+const decode = (s) => {
+  try { return decodeURIComponent(decodeURIComponent(s)); } catch { return s; }
+};
+let linkText = '';
+if (data.url) {
+  const u = new URL(data.url);
+  linkText = u.hostname.replace(/^www\./, '') + decode(u.pathname).replace(/\/$/, '');
+}
+const name = data.title.split(' - ')[0].trim();
+const target = data.platform ? `${name} on ${data.platform}` : name;
+---
+{(rows.length > 0 || data.url) && (
+<section class="machine" data-pagefind-ignore>
+  <div class="machine__icon">
+    <WriteupIcon data={data} size={132} />
+  </div>
+  <div class="machine__rows">
+    {rows.map(([k, v]) => (
+      <div class="machine__row">
+        <span class="machine__k mono">{k}</span>
+        <span class="machine__v mono">{v}</span>
+      </div>
+    ))}
+    {data.url && (
+      <div class="machine__row">
+        <span class="machine__k mono">Link</span>
+        <span class="machine__v machine__v--link mono">
+          <a
+            class="machine__url"
+            href={data.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={data.url}
+            aria-label={`${linkText} (opens in a new tab)`}
+          >{linkText}</a>
+          <!-- Larger, easier target for the same destination. Kept out of the
+               tab order and accessibility tree so it isn't announced twice. -->
+          <a
+            class="machine__visit"
+            href={data.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            tabindex="-1"
+            aria-hidden="true"
+            title={`Visit ${target}`}
+          >
+            Visit
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 17 17 7M9 7h8v8" />
+            </svg>
+          </a>
+        </span>
+      </div>
+    )}
+  </div>
+</section>
+)}
+
+<style>
+  .machine {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 1.6em 0 0;
+    background: var(--surface);
+  }
+  .machine__rows { flex: 1; min-width: 0; padding: 6px 18px; }
+  .machine__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    min-height: 36px;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.82rem;
+  }
+  .machine__row:last-child { border-bottom: none; }
+  .machine__k {
+    flex: none;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.7rem;
+  }
+  .machine__v { color: var(--text); text-align: right; min-width: 0; }
+  .machine__v--link { display: flex; align-items: center; gap: 10px; }
+  .machine__url {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--accent-text);
+  }
+  .machine__visit {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 26px;
+    padding: 0 10px;
+    border: 1px solid var(--accent-dim);
+    border-radius: 999px;
+    background: var(--accent-wash);
+    color: var(--accent-text);
+    font-size: 0.7rem;
+  }
+  .machine__visit:hover {
+    border-color: var(--accent-bright);
+    border-bottom-color: var(--accent-bright);
+    color: var(--text);
+  }
+  /* Icon column: separated by a divider and centred against the rows. */
+  .machine__icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 22px;
+    border-right: 1px solid var(--border-soft);
+  }
+
+  @media (max-width: 560px) {
+    .machine { flex-direction: column; }
+    .machine__icon {
+      border-right: none;
+      border-bottom: 1px solid var(--border-soft);
+      padding: 18px;
+    }
+    .machine__icon :global(.icon) { width: 96px !important; height: 96px !important; }
+    .machine__icon :global(.icon--fallback span) { font-size: 42px !important; }
+  }
+</style>

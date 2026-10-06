@@ -1,0 +1,92 @@
+---
+title: "Suspicious Threat - LD_PRELOAD Rootkit"
+description: "Neutralizing a userland rootkit that hides files by hooking libc through /etc/ld.so.preload."
+date: 2026-01-10
+tags: ["forensics", "linux", "rootkit", "dfir"]
+platform: "HackTheBox"
+type: "Challenge"
+difficulty: "Easy"
+os: "Linux"
+url: "https://app.hackthebox.com/challenges/Suspicious%2520Threat"
+knowledge: []
+draft: false
+---
+
+import Callout from '../../components/Callout.astro';
+import Spoiler from '../../components/Spoiler.astro';
+
+
+## Overview
+
+A forensics challenge where files are mysteriously missing from the filesystem. The hint points at anomalies in the library-loading process - a classic sign of an `LD_PRELOAD`-style userland rootkit. We confirm a hooked libc, neutralize it, and recover the hidden flag.
+
+## Reconnaissance
+
+We begin by accessing the spawned server over SSH. A common userland rootkit trick abuses the `LD_PRELOAD` environment variable to force a malicious library to load ahead of the real one. First check whether the variable is set:
+
+```bash
+echo $LD_PRELOAD
+```
+
+Nothing returns - but a system-wide preload can also be configured via a file. Check whether `ld.so.preload` points at another library:
+
+```bash
+cat /etc/ld.so.preload
+```
+
+It points at `libc.hook.so.6`, which is immediately suspicious:
+
+```bash
+root@host:/# cat /etc/ld.so.preload
+/lib/x86_64-linux-gnu/libc.hook.so.6
+```
+
+### Why this matters
+
+`libc.so.6` is the core C library nearly every Linux program depends on. The system is loading `libc.hook.so.6` **before** it, which means standard libc functions are being intercepted - so `ls`, `ps`, and `find` are no longer reliable, and files can be selectively hidden.
+
+<Callout type="note">
+This is a classic `LD_PRELOAD` userland rootkit, implemented as a fake libc that overrides functions like `readdir()` / `getdents64()` to hide directory entries.
+</Callout>
+
+## Solution
+
+We could reverse-engineer the malicious library, but since this is a forensics challenge and we only need to find a hidden file, the faster path is to **neutralize the rootkit** and let the hidden files reappear. Simply rename the preload file so it no longer loads:
+
+```bash
+mv /etc/ld.so.preload /etc/ld.so.preload.disabled
+```
+
+Now search for the flag:
+
+```bash
+find / -iname "*flag*"
+```
+
+<Callout type="warning">
+Renaming `ld.so.preload` neutralizes the rootkit for the whole system. In a real investigation you'd image the host and analyze the malicious library in isolation first - pulling the plug on a live rootkit can destroy volatile evidence.
+</Callout>
+
+Before neutralizing, the search only returns kernel/sysfs noise. **After** neutralizing, a new path appears:
+
+```bash
+root@host:/# find / -iname "*flag*"
+/var/pr3l04d_/flag.txt
+/sys/devices/...
+```
+
+The `/var/pr3l04d_/` directory stands out. Read it:
+
+```bash
+cat /var/pr3l04d_/flag.txt
+```
+
+<Spoiler summary="Reveal flag">
+`HTB{Us3rL4nd_R00tK1t_R3m0v3dd!}`
+</Spoiler>
+
+## Key Takeaways
+
+- `/etc/ld.so.preload` is a system-wide hook point - anything listed there loads before every dynamically linked binary, making it a powerful (and noisy) persistence and hiding mechanism.
+- When core tools like `ls`/`find` can't be trusted, cross-check with statically linked tools or examine the raw filesystem - hooking works by intercepting libc calls, so tools that don't use libc the same way bypass it.
+- Detection is straightforward once you know to look: `/etc/ld.so.preload` should almost always be empty on a clean system.

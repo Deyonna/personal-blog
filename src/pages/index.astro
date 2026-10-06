@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import { getCollection } from 'astro:content';
+
+const base = import.meta.env.BASE_URL;
+const writeups = (await getCollection('writeups', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 5);
+---
+<BaseLayout title="0xdeyonna">
+  <section class="hero">
+    <div class="eyebrow">Security Research &amp; Writeups</div>
+    <h1 class="term"><span class="term__prompt" aria-hidden="true">&gt;</span>0xdeyonna<span class="term__cursor" aria-hidden="true">_</span></h1>
+    <p class="muted lede">
+      HTB machines, malware analysis, and memory forensics. Maintaining a <a href={`${base}/knowledge`}>knowledge library</a> of all things DFIR, and documenting the techniques and artifacts   behind investigations.
+    </p>
+  </section>
+
+  <div class="eyebrow section-label">Latest writeups</div>
+  <PostList entries={writeups} basePath="writeups" showCover />
+
+  <p class="more mono"><a href={`${base}/writeups`}>all writeups →</a></p>
+</BaseLayout>
+
+<style>
+  .hero { margin-bottom: 44px; }
+  .hero h1 { font-size: 2.3rem; margin: 12px 0 14px; }
+  .term {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .term__prompt { color: var(--accent-bright); margin-right: 0.35em; }
+  .term__cursor {
+    color: var(--accent-bright);
+    margin-left: 0.05em;
+    animation: blink 1.1s steps(1, end) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .term__cursor { animation: none; }
+  }
+  .lede { font-size: 1.1rem; max-width: 560px; }
+  .section-label { margin-bottom: 4px; }
+  .more { margin-top: 20px; font-size: 0.82rem; }
+</style>

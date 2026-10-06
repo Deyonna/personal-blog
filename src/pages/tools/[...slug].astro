@@ -1,0 +1,31 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+const base = import.meta.env.BASE_URL;
+
+export async function getStaticPaths() {
+  const entries = await getCollection('tools', ({ data }) => !data.draft);
+  return entries.map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content, headings } = await entry.render();
+---
+<BaseLayout title={data.title} description={data.description} wide>
+  <div class="doc">
+  <article class="prose" style="max-width:720px" data-pagefind-body data-pagefind-filter="section:Tools">
+    <div class="eyebrow" data-pagefind-ignore>{data.language ?? 'Tool'}</div>
+    <h1>{data.title}</h1>
+    <p class="lede muted" style="font-size:1.1rem">{data.description}</p>
+    <div class="mono" data-pagefind-ignore style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:0.75rem">
+      {data.tags.map((t) => <a href={`${base}/tools?tag=${encodeURIComponent(t)}`} class="tag" data-pagefind-filter="tag">{t}</a>)}
+      {data.repo && <a href={data.repo}>source →</a>}
+    </div>
+    <hr />
+    <Content />
+    <p class="mono" style="margin-top:3em;font-size:0.8rem"><a href={`${base}/tools`}>← all tools</a></p>
+  </article>
+  <TableOfContents headings={headings} />
+  </div>
+</BaseLayout>

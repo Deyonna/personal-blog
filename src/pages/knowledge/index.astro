@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SectionFilter from '../../components/SectionFilter.astro';
+import { getCollection } from 'astro:content';
+const base = import.meta.env.BASE_URL;
+const entries = (await getCollection('knowledge', ({ data }) => !data.draft))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+// Group by domain for a reference-library feel.
+const byDomain = {};
+for (const e of entries) (byDomain[e.data.domain] ??= []).push(e);
+const domains = Object.keys(byDomain).sort();
+---
+<BaseLayout title="Knowledge" description="A reference library of DFIR artifacts and techniques.">
+  <div class="eyebrow">Reference Library</div>
+  <h1>Knowledge</h1>
+  <p class="muted">Evergreen notes on forensic artifacts and attacker techniques. Writeups link back here.</p>
+  {domains.length === 0 && <p class="muted" style="margin-top:20px">Nothing here yet.</p>}
+  <SectionFilter entries={entries} placeholder="Search knowledge…">
+  {domains.map((d) => (
+    <section style="margin-top:32px" data-filter-group>
+      <h2>{d}</h2>
+      <ul class="klist">
+        {byDomain[d].map((e) => (
+          <li
+            data-filter-item
+            data-tags={e.data.tags.join('|')}
+            data-text={[e.data.title, e.data.description, d, ...e.data.tags].join(' ').toLowerCase()}
+          >
+            <a href={`${base}/knowledge/${e.slug}`}>{e.data.title}</a>
+            <span class="muted"> - {e.data.description}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+  </SectionFilter>
+</BaseLayout>
+<style>
+  .klist { list-style: none; padding: 0; }
+  .klist li { padding: 8px 0; border-top: 1px solid var(--border-soft); font-size: 0.95rem; }
+  .klist a { font-family: var(--font-serif); font-weight: 600; color: var(--text); border-bottom: none; }
+  .klist a:hover { color: var(--accent-bright); }
+</style>

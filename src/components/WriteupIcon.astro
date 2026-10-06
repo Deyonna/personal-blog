@@ -1,0 +1,42 @@
+---
+// Platform avatar for a writeup (the `icon` frontmatter image), or a
+// monogram circle when none is set. Real icons are shown uncropped because
+// they carry their own shape (HTB machines are round, Sherlocks are shields).
+// Used by the machine card and the writeup list.
+import { Image } from 'astro:assets';
+
+const { data, size = 96 } = Astro.props;
+// "Precious - HTB Walkthrough" -> "P"
+const initial = data.title.split(' - ')[0].trim().charAt(0).toUpperCase();
+const dims = `width:${size}px;height:${size}px`;
+---
+
+{data.icon ? (
+  <Image src={data.icon} alt="" width={size * 2} class="icon" style={dims} />
+) : (
+  <div class="icon icon--fallback" style={dims} aria-hidden="true">
+    <span style={`font-size:${Math.round(size * 0.44)}px`}>{initial}</span>
+  </div>
+)}
+
+<style>
+  .icon {
+    flex: none;
+    display: block;
+    object-fit: contain;
+  }
+  .icon--fallback {
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 30% 25%, var(--accent-wash), var(--surface) 70%);
+  }
+  .icon--fallback span {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--accent-text);
+  }
+</style>

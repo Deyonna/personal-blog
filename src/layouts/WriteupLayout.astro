@@ -1,0 +1,83 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import MachineCard from '../components/MachineCard.astro';
+import { getCollection } from 'astro:content';
+
+const base = import.meta.env.BASE_URL;
+const { entry, headings = [] } = Astro.props;
+const { data } = entry;
+
+const fmt = (d) =>
+  d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+
+// Resolve referenced knowledge slugs to real entries for two-way linking.
+let referenced = [];
+if (data.knowledge?.length) {
+  const all = await getCollection('knowledge', ({ data }) => !data.draft);
+  referenced = all.filter((k) => data.knowledge.includes(k.slug));
+}
+---
+<BaseLayout title={data.title} description={data.description} wide>
+  <div class="doc">
+  <article class="prose" data-pagefind-body data-pagefind-filter="section:Writeups">
+    <div class="eyebrow" data-pagefind-ignore>
+      {[data.platform, data.type, data.difficulty].filter(Boolean).join(' · ') || 'Writeup'}
+    </div>
+    <h1>{data.title}</h1>
+    <p class="lede muted">{data.description}</p>
+
+    <div class="meta mono" data-pagefind-ignore>
+      {data.date && <span>{fmt(data.date)}</span>}
+      {data.tags.map((t) => <a href={`${base}/writeups?tag=${encodeURIComponent(t)}`} class="tag" data-pagefind-filter="tag">{t}</a>)}
+    </div>
+
+    <MachineCard data={data} />
+
+    <hr />
+
+    <slot />
+
+    {referenced.length > 0 && (
+      <section class="referenced">
+        <h2>Artifacts &amp; concepts referenced</h2>
+        <ul>
+          {referenced.map((k) => (
+            <li>
+              <a href={`${base}/knowledge/${k.slug}`}>{k.data.title}</a>
+              <span class="muted"> - {k.data.description}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <p class="back mono"><a href={`${base}/writeups`}>← all writeups</a></p>
+  </article>
+  <TableOfContents headings={headings} />
+  </div>
+</BaseLayout>
+
+<style>
+  .prose { max-width: 720px; }
+  .lede { font-size: 1.1rem; margin-top: 0.4em; }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    margin-top: 14px;
+  }
+  .referenced {
+    margin-top: 3em;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 20px 16px;
+    background: var(--bg-alt);
+  }
+  .referenced ul { padding-left: 1.1em; }
+  .referenced li { margin: 0.4em 0; font-size: 0.92rem; }
+  .back { margin-top: 3em; font-size: 0.8rem; }
+</style>

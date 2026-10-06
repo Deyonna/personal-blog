@@ -1,0 +1,81 @@
+---
+// Adds a "copy" button to the top-right of every code block. The button
+// shows on hover or keyboard focus, and is always visible on touch screens
+// (no hover there). Each <pre> is wrapped so the button stays pinned while
+// long lines scroll horizontally underneath it.
+---
+
+<script>
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback for non-secure contexts (e.g. opening the site over a LAN IP).
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.append(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+  };
+
+  for (const pre of document.querySelectorAll<HTMLPreElement>('main pre')) {
+    const wrap = document.createElement('div');
+    wrap.className = 'code-block';
+    pre.before(wrap);
+    wrap.append(pre);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'code-copy';
+    btn.textContent = 'copy';
+    btn.setAttribute('aria-label', 'Copy code to clipboard');
+    wrap.append(btn);
+
+    let timer: number | undefined;
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code') ?? pre;
+      await copyText((code.textContent ?? '').replace(/\n$/, ''));
+      btn.textContent = 'copied';
+      btn.classList.add('is-done');
+      btn.setAttribute('aria-label', 'Copied');
+      clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        btn.textContent = 'copy';
+        btn.classList.remove('is-done');
+        btn.setAttribute('aria-label', 'Copy code to clipboard');
+      }, 1600);
+    });
+  }
+</script>
+
+<style is:global>
+  .code-block { position: relative; margin: 1.4em 0; }
+  .code-block > pre { margin: 0; }
+  .code-copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 3px 9px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .code-block:hover .code-copy,
+  .code-copy:focus-visible,
+  .code-copy.is-done { opacity: 1; }
+  .code-copy:hover { color: var(--text); border-color: var(--text-faint); }
+  .code-copy.is-done { color: var(--accent-text); border-color: var(--accent-dim); }
+  @media (hover: none) {
+    .code-copy { opacity: 1; }
+  }
+</style>

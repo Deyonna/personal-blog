@@ -1,0 +1,186 @@
+---
+// Instant, client-side search + tag cloud for a section index page.
+// Wrap a list in this component; every element inside marked with
+// `data-filter-item` (see PostList) is matched against the query and the
+// selected tags. Elements marked `data-filter-group` are hidden when none
+// of their items match. Runs entirely in the browser, so it works in
+// `npm run dev` as well as on the built site.
+import SearchIcon from './SearchIcon.astro';
+const { entries = [], placeholder = 'Filter…' } = Astro.props;
+
+const counts = new Map();
+for (const entry of entries) {
+  for (const tag of entry.data.tags ?? []) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+---
+
+<div class="sf" data-section-filter>
+  <div class="sf__controls">
+    <div class="sf__field">
+      <SearchIcon />
+      <input
+        type="search"
+        class="sf__input mono"
+        placeholder={placeholder}
+        aria-label={placeholder}
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    {tags.length > 0 && (
+      <div class="sf__cloud" role="group" aria-label="Filter by tag">
+        {tags.map(([tag, count]) => (
+          <button
+            type="button"
+            class="tag sf__tag"
+            data-tag={tag}
+            aria-pressed="false"
+            title={`${count} post${count === 1 ? '' : 's'}`}
+          >
+            {tag}
+          </button>
+        ))}
+      </div>
+    )}
+    <div class="sf__status mono" aria-live="polite">
+      <span class="sf__count"></span>
+      <button type="button" class="sf__clear" hidden>clear</button>
+    </div>
+  </div>
+
+  <slot />
+
+  <p class="sf__empty muted" hidden>No matches.</p>
+</div>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-section-filter]')) {
+    const input = root.querySelector<HTMLInputElement>('.sf__input')!;
+    const tagButtons = [...root.querySelectorAll<HTMLButtonElement>('.sf__tag')];
+    const items = [...root.querySelectorAll<HTMLElement>('[data-filter-item]')];
+    const groups = [...root.querySelectorAll<HTMLElement>('[data-filter-group]')];
+    const count = root.querySelector<HTMLElement>('.sf__count')!;
+    const clear = root.querySelector<HTMLButtonElement>('.sf__clear')!;
+    const empty = root.querySelector<HTMLElement>('.sf__empty')!;
+    const selected = new Set<string>();
+
+    // Restore state from ?q=…&tag=… so filtered views can be linked.
+    const params = new URLSearchParams(location.search);
+    input.value = params.get('q') ?? '';
+    for (const t of params.getAll('tag')) selected.add(t);
+
+    const apply = () => {
+      const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+      let shown = 0;
+      for (const item of items) {
+        const text = item.dataset.text ?? '';
+        const itemTags = (item.dataset.tags ?? '').split('|');
+        const ok =
+          terms.every((t) => text.includes(t)) &&
+          [...selected].every((t) => itemTags.includes(t));
+        item.hidden = !ok;
+        if (ok) shown++;
+      }
+      for (const g of groups) {
+        g.hidden = !g.querySelector('[data-filter-item]:not([hidden])');
+      }
+      for (const b of tagButtons) {
+        const on = selected.has(b.dataset.tag!);
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('tag--accent', on);
+      }
+
+      const filtering = terms.length > 0 || selected.size > 0;
+      count.textContent = filtering ? `${shown} of ${items.length}` : `${items.length} total`;
+      clear.hidden = !filtering;
+      empty.hidden = shown > 0 || items.length === 0;
+
+      const next = new URLSearchParams();
+      if (input.value.trim()) next.set('q', input.value.trim());
+      for (const t of selected) next.append('tag', t);
+      const qs = next.toString();
+      history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`);
+    };
+
+    input.addEventListener('input', apply);
+    for (const b of tagButtons) {
+      b.addEventListener('click', () => {
+        const t = b.dataset.tag!;
+        selected.has(t) ? selected.delete(t) : selected.add(t);
+        apply();
+      });
+    }
+    // Tag links inside the list (PostList) toggle the filter in place
+    // instead of reloading the page.
+    root.addEventListener('click', (e) => {
+      const a = (e.target as Element).closest<HTMLElement>('[data-filter-tag]');
+      if (!a) return;
+      e.preventDefault();
+      selected.add(a.dataset.filterTag!);
+      apply();
+      input.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    clear.addEventListener('click', () => {
+      input.value = '';
+      selected.clear();
+      apply();
+      input.focus();
+    });
+    apply();
+  }
+</script>
+
+<style>
+  .sf__controls { margin: 22px 0 10px; }
+  .sf__input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.85rem;
+    padding: 10px 12px 10px 34px;
+    outline: none;
+  }
+  .sf__field { position: relative; }
+  .sf__field :global(svg) {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    color: var(--text-faint);
+    pointer-events: none;
+  }
+  .sf__input:focus { border-color: var(--accent-dim); }
+  .sf__input::placeholder { color: var(--text-faint); }
+  .sf__cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: baseline;
+    margin-top: 12px;
+  }
+  .sf__tag { cursor: pointer; border: none; font-size: 0.75rem; }
+  .sf__status {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+  .sf__clear {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent-text);
+    font: inherit;
+    cursor: pointer;
+  }
+  .sf__clear:hover { color: var(--accent-bright); }
+  .sf__empty { margin-top: 18px; }
+</style>
