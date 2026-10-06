@@ -21,9 +21,7 @@ if (data.knowledge?.length) {
 <BaseLayout title={data.title} description={data.description} wide>
   <div class="doc">
   <article class="prose" data-pagefind-body data-pagefind-filter="section:Writeups">
-    <div class="eyebrow" data-pagefind-ignore>
-      {[data.platform, data.type, data.difficulty].filter(Boolean).join(' · ') || 'Writeup'}
-    </div>
+    <div class="eyebrow" data-pagefind-ignore>Writeups</div>
     <h1>{data.title}</h1>
     <p class="lede muted">{data.description}</p>
 

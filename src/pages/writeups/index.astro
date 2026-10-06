@@ -8,7 +8,7 @@ const writeups = (await getCollection('writeups', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 <BaseLayout title="Writeups" description="CTF, HackTheBox, and Sherlock writeups.">
-  <div class="eyebrow">Writeups</div>
+  <div class="eyebrow">0xdeyonna</div>
   <h1>Writeups</h1>
   <p class="muted">Walkthroughs of boxes, challenges, and DFIR scenarios.</p>
   <SectionFilter entries={writeups} placeholder="Search writeups…">

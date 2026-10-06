@@ -15,7 +15,7 @@ const usedIn = writeups.filter((w) => (w.data.knowledge ?? []).includes(entry.sl
 <BaseLayout title={data.title} description={data.description} wide>
   <div class="doc">
   <article class="prose" data-pagefind-body data-pagefind-filter="section:Knowledge">
-    <div class="eyebrow" data-pagefind-ignore>{data.domain}</div>
+    <div class="eyebrow" data-pagefind-ignore>{['Knowledge', data.domain].filter(Boolean).join(' · ')}</div>
     <h1>{data.title}</h1>
     <p class="lede muted">{data.description}</p>
     <div class="meta mono" data-pagefind-ignore>

@@ -1,13 +1,13 @@
 ---
 title: "Evidence of Execution"
-description: "The Windows artifacts that show a program actually ran - and the caveats that trip people up."
+description: "The Windows artifacts that can prove a program actually run."
 domain: "Windows Artifacts"
 tags: ["dfir", "windows", "execution"]
 updated: 2026-01-14
 draft: false
 ---
 
-Proving that a binary **executed** (not merely that it existed on disk) is one of the most common questions in an investigation. No single artifact is definitive; you corroborate across several. This page follows a consistent template so every artifact answers the same questions.
+Proving that a binary **executed** (not merely that it existed on disk) is one of the most common questions in an investigation. No single artifact is definitive.
 
 ## Prefetch
 
@@ -28,19 +28,30 @@ Proving that a binary **executed** (not merely that it existed on disk) is one o
 
 - **Location:** `SYSTEM` registry hive.
 - **What it proves:** the binary was *present* and, on some Windows versions, that it executed.
-- **What it does *not* prove:** on modern Windows, a ShimCache entry does **not** by itself prove execution - a frequent analyst mistake.
+- **What it does *not* prove:** on modern Windows, a ShimCache entry does **not** by itself prove execution.
 - **Parsing:** AppCompatCacheParser.
+- **Caveats:** the timestamp stored is the file's last-modified time, not when it ran.
 
 ## UserAssist
 
 - **Location:** `NTUSER.DAT` hive, per-user.
 - **What it proves:** GUI-launched programs, with run counts and focus time.
 - **What it does *not* prove:** command-line-launched execution (won't appear here).
+- **Parsing:** Registry Explorer (Eric Zimmerman).
 - **Caveats:** values are ROT13-encoded.
 
 ## BAM / DAM
 
 - **Location:** `SYSTEM` hive.
 - **What it proves:** background activity per user with last-execution timestamps.
+- **Parsing:** Registry Explorer (Eric Zimmerman).
 
-> **Rule of thumb:** presence ≠ execution. Corroborate at least two independent artifacts before asserting a program ran.
+## Quick Reference
+
+| Artifact | Location | Proves execution? | Key data | Per-user? | Tool |
+| --- | --- | --- | --- | --- | --- |
+| Prefetch | `C:\Windows\Prefetch\*.pf` | Yes | Run count, up to 8 last-run times | No | PECmd |
+| Amcache.hve | `C:\Windows\AppCompat\Programs\Amcache.hve` | Not alone | SHA-1, path, metadata | No | AmcacheParser |
+| ShimCache | `SYSTEM` hive | No (modern Windows) | Path, last-modified time | No | AppCompatCacheParser |
+| UserAssist | `NTUSER.DAT` | Yes (GUI only) | Run count, focus time | Yes | Registry Explorer |
+| BAM / DAM | `SYSTEM` hive | Yes | Last-execution time | Yes | Registry Explorer |

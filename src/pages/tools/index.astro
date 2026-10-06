@@ -7,7 +7,7 @@ const entries = (await getCollection('tools', ({ data }) => !data.draft))
   .sort((a, b) => (b.data.date?.valueOf() ?? 0) - (a.data.date?.valueOf() ?? 0));
 ---
 <BaseLayout title="Tools" description="Scripts, parsers, and utilities.">
-  <div class="eyebrow">Tooling</div>
+  <div class="eyebrow">0xdeyonna</div>
   <h1>Tools</h1>
   <p class="muted">Scripts and parsers I've written - often automating something from a writeup or knowledge page.</p>
   <SectionFilter entries={entries} placeholder="Search tools…">

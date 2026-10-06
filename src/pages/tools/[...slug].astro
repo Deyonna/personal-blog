@@ -15,7 +15,7 @@ const { Content, headings } = await entry.render();
 <BaseLayout title={data.title} description={data.description} wide>
   <div class="doc">
   <article class="prose" style="max-width:720px" data-pagefind-body data-pagefind-filter="section:Tools">
-    <div class="eyebrow" data-pagefind-ignore>{data.language ?? 'Tool'}</div>
+    <div class="eyebrow" data-pagefind-ignore>{['Tools', data.language].filter(Boolean).join(' · ')}</div>
     <h1>{data.title}</h1>
     <p class="lede muted" style="font-size:1.1rem">{data.description}</p>
     <div class="mono" data-pagefind-ignore style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:0.75rem">

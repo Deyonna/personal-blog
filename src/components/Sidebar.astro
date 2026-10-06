@@ -162,11 +162,9 @@ const social = [
 
   .social {
     display: flex;
-    justify-content: space-between;
-    gap: 4px;
-    /* Pull the outer icons' hit areas into the gutters so the glyphs line up
-       with the text edges above. */
-    margin: 24px -8px 0;
+    justify-content: flex-start;
+    gap: 6px;
+    margin-top: 24px;
     padding-top: 18px;
     border-top: 1px solid var(--border);
     font-family: var(--font-mono);
@@ -182,6 +180,9 @@ const social = [
     color: var(--text-muted);
     border-bottom: none;
   }
+  /* Pull the first icon's hit area into the gutter so its glyph lines up
+     with the text edge above. */
+  .social a:first-child { margin-left: -8px; }
   .social a:hover { color: var(--accent-bright); background: var(--border-soft); }
 
   @media (max-width: 780px) {
