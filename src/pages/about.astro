@@ -3,6 +3,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { Image } from 'astro:assets';
 import avatar from '../assets/avatar.png';
 import { timeline } from '../data/timeline';
+import { social } from '../data/social';
+
+const certifications = [
+  { code: 'SC-200', name: 'Security Operations Analyst', issuer: 'Microsoft' },
+  { code: 'AZ-900', name: 'Azure Fundamentals', issuer: 'Microsoft' },
+  { code: 'MS-900', name: 'Microsoft 365 Fundamentals', issuer: 'Microsoft' },
+];
 
 const skills = [
   'Log Analysis',
@@ -55,18 +62,42 @@ const skills = [
       ))}
     </ol>
 
-    <h2>Certifications &amp; profiles</h2>
-    <ul>
-      <li>SC-200: Microsoft Security Operations Analyst</li>
-      <li>AZ-900: Microsoft Azure Fundamentals</li>
-      <li>MS-900: Microsoft 365 Fundamentals</li>
-      <li>GitHub: <a href="https://github.com/Deyonna">github.com/Deyonna</a></li>
-      <li>LinkedIn: <a href="https://www.linkedin.com/in/pgkinala">linkedin.com/in/pgkinala</a></li>
-      <li>HackTheBox: <a href="https://app.hackthebox.com/users/103145">app.hackthebox.com/users/103145</a></li>
+    <h2>Certifications</h2>
+    <ul class="certs">
+      {certifications.map((c) => (
+        <li class="cert">
+          <span class="cert__code mono">{c.code}</span>
+          <span class="cert__name">{c.name}</span>
+          <span class="cert__issuer mono">{c.issuer}</span>
+        </li>
+      ))}
     </ul>
 
     <h2>Contact</h2>
-    <p>Reach me at <a href="mailto:deyonna@proton.me">deyonna@proton.me</a>.</p>
+    <p>Reach out or find me on any of these:</p>
+    <ul class="contact">
+      {social.map((s) => {
+        const Tag = s.href ? 'a' : 'span';
+        return (
+          <li>
+            <Tag
+              href={s.href}
+              class="contact__link"
+              {...(s.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+                {...(s.stroke
+                  ? { fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }
+                  : { fill: 'currentColor' })}>
+                <path d={s.path} />
+              </svg>
+              <span class="contact__label">{s.label}</span>
+              <span class="contact__handle mono">{s.handle}</span>
+            </Tag>
+          </li>
+        );
+      })}
+    </ul>
   </article>
 </BaseLayout>
 
@@ -147,6 +178,67 @@ const skills = [
   .timeline__year { font-size: 0.72rem; letter-spacing: 0.08em; color: var(--accent-text); }
   .timeline__title { margin: 2px 0 4px; font-size: 1.05rem; padding: 0; }
   .timeline__text { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
+
+  /* ---------- certifications ---------- */
+  .certs {
+    list-style: none;
+    padding: 0;
+    margin: 1.2em 0 0;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+  .cert {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent-dim);
+    border-radius: 8px;
+  }
+  .cert__code {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--accent-text);
+    letter-spacing: -0.01em;
+  }
+  .cert__name { font-size: 0.92rem; color: var(--text); line-height: 1.35; }
+  .cert__issuer {
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  /* ---------- contact ---------- */
+  .contact { list-style: none; padding: 0; margin: 0.8em 0 0; }
+  .contact li { margin: 0; border-top: 1px solid var(--border-soft); }
+  .contact li:first-child { border-top: none; }
+  .contact__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    color: var(--text-faint);
+    border-bottom: none;
+  }
+  .contact__link svg { flex: none; }
+  .contact__label { flex: 0 0 6.5em; font-size: 0.92rem; color: var(--text); }
+  .contact__handle {
+    min-width: 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  a.contact__link:hover,
+  a.contact__link:hover .contact__handle { color: var(--accent-text); }
 
   @media (max-width: 520px) {
     .bio { gap: 16px; }
