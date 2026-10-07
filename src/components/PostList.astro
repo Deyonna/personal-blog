@@ -2,6 +2,7 @@
 // Reusable list of entries. `basePath` is the collection route segment,
 // e.g. "writeups". Works for any collection with title/description/tags.
 import WriteupIcon from './WriteupIcon.astro';
+import LockIcon from './LockIcon.astro';
 
 const base = import.meta.env.BASE_URL;
 // `showCover` adds the writeup's circular icon (or monogram) to each row.
@@ -23,6 +24,7 @@ const fmt = (d) =>
         entry.data.type,
         entry.data.difficulty,
         entry.data.language,
+        entry.data.locked && 'locked',
         ...(entry.data.tags ?? []),
       ].filter(Boolean).join(' ').toLowerCase()}
     >
@@ -33,7 +35,14 @@ const fmt = (d) =>
       )}
       <div class="row__body">
       <div class="row__head">
-        <a href={`${base}/${basePath}/${entry.slug}`} class="row__title">{entry.data.title}</a>
+        <span class="row__titlewrap">
+          <a href={`${base}/${basePath}/${entry.slug}`} class="row__title">{entry.data.title}</a>
+          {entry.data.locked && (
+            <span class="row__locked mono" title="Active - published once it retires">
+              <LockIcon />locked
+            </span>
+          )}
+        </span>
         {showDate && entry.data.date && (
           <span class="row__date mono">{fmt(entry.data.date)}</span>
         )}
@@ -72,6 +81,19 @@ const fmt = (d) =>
     border-bottom: none;
   }
   .row__title:hover { color: var(--accent-bright); }
+  .row__titlewrap { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+  .row__locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    align-self: center;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--accent-wash);
+    color: var(--accent-text);
+    font-size: 0.66rem;
+    white-space: nowrap;
+  }
   .row__date { font-size: 0.72rem; color: var(--text-faint); white-space: nowrap; }
   .row__desc { color: var(--text-muted); font-size: 0.95rem; margin: 0 0 9px; }
   .row__tags { display: flex; flex-wrap: wrap; gap: 6px; }

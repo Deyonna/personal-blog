@@ -4,3 +4,8 @@ dist/
 .DS_Store
 *.log
 .env
+
+# Full text of locked writeups (active boxes/challenges). Never pushed:
+# the public file in src/content/writeups keeps only the frontmatter with
+# `locked: true`. When it retires, paste the body back and remove the flag.
+private/

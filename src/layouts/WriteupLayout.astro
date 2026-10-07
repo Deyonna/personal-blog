@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import MachineCard from '../components/MachineCard.astro';
+import LockIcon from '../components/LockIcon.astro';
 import { getCollection } from 'astro:content';
 
 const base = import.meta.env.BASE_URL;
@@ -34,7 +35,21 @@ if (data.knowledge?.length) {
 
     <hr />
 
-    <slot />
+    {data.locked ? (
+      <div class="locked" data-pagefind-ignore>
+        <LockIcon class="locked__icon" />
+        <div>
+          <p class="locked__title">This writeup is locked</p>
+          <p class="locked__text">
+            The {(data.type ?? 'challenge').toLowerCase()} is still active
+            {data.platform && <> on {data.platform}</>}, so in line with the
+            platform's rules the walkthrough will be published once it retires.
+          </p>
+        </div>
+      </div>
+    ) : (
+      <slot />
+    )}
 
     {referenced.length > 0 && (
       <section class="referenced">
@@ -78,4 +93,23 @@ if (data.knowledge?.length) {
   .referenced ul { padding-left: 1.1em; }
   .referenced li { margin: 0.4em 0; font-size: 0.92rem; }
   .back { margin-top: 3em; font-size: 0.8rem; }
+
+  .locked {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 18px 20px;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-dim);
+    border-radius: 8px;
+  }
+  .locked :global(.locked__icon) {
+    flex: none;
+    font-size: 1.3rem;
+    margin-top: 2px;
+    color: var(--accent-text);
+  }
+  .locked__title { margin: 0 0 4px; font-weight: 600; color: var(--text); }
+  .locked__text { margin: 0; font-size: 0.92rem; color: var(--text-muted); }
 </style>

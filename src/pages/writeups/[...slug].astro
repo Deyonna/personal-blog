@@ -7,8 +7,12 @@ export async function getStaticPaths() {
   return entries.map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
 }
 const { entry } = Astro.props;
-const { Content, headings } = await entry.render();
+// Locked writeups are never rendered, so their body (and headings) never
+// reach the built HTML or the search index.
+const { Content, headings } = entry.data.locked
+  ? { Content: null, headings: [] }
+  : await entry.render();
 ---
 <WriteupLayout entry={entry} headings={headings}>
-  <Content />
+  {Content && <Content />}
 </WriteupLayout>

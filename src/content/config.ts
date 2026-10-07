@@ -20,6 +20,9 @@ const writeups = defineCollection({
       // Knowledge pages this writeup references, by their slug - powers
       // the "artifacts referenced" list and two-way linking.
       knowledge: z.array(z.string()).default([]),
+      // Active box/challenge: listed with its details, but the body is
+      // never rendered. Flip to false once it retires.
+      locked: z.boolean().default(false),
       draft: z.boolean().default(false),
     }),
 });
