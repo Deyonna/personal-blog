@@ -134,6 +134,9 @@ const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeComp
 </script>
 
 <style>
+  /* Items often set their own `display` (e.g. flex rows), which would
+     override the browser's default `[hidden] { display: none }`. */
+  .sf :global([hidden]) { display: none !important; }
   .sf__controls { margin: 22px 0 10px; }
   .sf__input {
     width: 100%;

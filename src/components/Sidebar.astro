@@ -88,7 +88,7 @@ const social = [
         title={s.label}
         {...(s.external && s.href !== '#' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
           {...(s.stroke
             ? { fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }
             : { fill: 'currentColor' })}>
@@ -160,29 +160,30 @@ const social = [
   .section { margin-bottom: auto; }
   .eyebrow { margin-bottom: 10px; }
 
+  /* Pinned to the bottom of the sidebar: the negative bottom margin eats
+     into the sidebar's padding so the row sits close to the edge. */
   .social {
     display: flex;
-    justify-content: flex-start;
-    gap: 6px;
+    justify-content: space-between;
     margin-top: 24px;
-    padding-top: 18px;
+    margin-bottom: -14px;
+    padding-top: 12px;
     border-top: 1px solid var(--border);
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
   }
   .social a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 6px;
     color: var(--text-muted);
     border-bottom: none;
   }
-  /* Pull the first icon's hit area into the gutter so its glyph lines up
-     with the text edge above. */
-  .social a:first-child { margin-left: -8px; }
+  /* Pull the outer icons' hit areas into the gutter so their glyphs line
+     up with the edges of the divider line. */
+  .social a:first-child { margin-left: -9px; }
+  .social a:last-child { margin-right: -9px; }
   .social a:hover { color: var(--accent-bright); background: var(--border-soft); }
 
   @media (max-width: 780px) {

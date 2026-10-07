@@ -40,8 +40,8 @@ const fmt = (d) =>
       </div>
       <p class="row__desc">{entry.data.description}</p>
       <div class="row__tags">
-        {(entry.data.tags ?? []).slice(0, 4).map((t, i) => (
-          <a href={`${base}/${basePath}?tag=${encodeURIComponent(t)}`} data-filter-tag={t} class={i === 0 ? 'tag tag--accent' : 'tag'}>{t}</a>
+        {(entry.data.tags ?? []).slice(0, 4).map((t) => (
+          <a href={`${base}/${basePath}?tag=${encodeURIComponent(t)}`} data-filter-tag={t} class="tag">{t}</a>
         ))}
       </div>
       </div>
